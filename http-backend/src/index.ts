@@ -5,7 +5,9 @@ import dotenv from "dotenv";
 import { middleware } from "./middleware.js";
 dotenv.config();
 import { z } from "zod";
-import { prisma } from "./lib/prisma.js";
+import { PrismaClient } from "@prisma/client";
+
+const prismaClient = new PrismaClient();
 
 app.use(express.json());
 
@@ -34,7 +36,7 @@ app.post("/signup", async (req, res) => {
   }
 
   try {
-    const user = await prisma.user.create({
+    const user = await prismaClient.user.create({
       data: {
         email: parsedData.data.email,
         password: parsedData.data.password,
