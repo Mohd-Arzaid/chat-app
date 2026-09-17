@@ -5,9 +5,9 @@ import dotenv from "dotenv";
 import { middleware } from "./middleware.js";
 dotenv.config();
 import { z } from "zod";
+import { prisma } from "./lib/prisma.js";
 
 app.use(express.json());
-
 
 const SignupSchema = z.object({
   username: z.string().min(3).max(20),
@@ -24,18 +24,34 @@ const CreateRoomSchema = z.object({
   roomName: z.string(),
 });
 
-app.post("/signup", (req, res) => {
-  const { data, success, error } = SignupSchema.safeParse(req.body);
-  if (!success) {
+app.post("/signup", async (req, res) => {
+  const parsedData = SignupSchema.safeParse(req.body);
+  if (!parsedData.success) {
     return res.status(400).json({
       message: "Incorrect Inputs",
-      errors: z.flattenError(error).fieldErrors,
+      errors: z.flattenError(parsedData.error).fieldErrors,
     });
   }
-  // db call
-  res.json({
-    userId: 123,
-  });
+
+  try {
+    const user = await prisma.user.create({
+      data: {
+        email: parsedData.data.email,
+        password: parsedData.data.password,
+        name: parsedData.data.username,
+      },
+    });
+
+    // db call
+    res.json({
+      message: "User created successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(411).json({
+      message: "User already exists with this username",
+    });
+  }
 });
 
 app.post("/login", (req, res) => {
